@@ -16,7 +16,7 @@ def create_tool_user(tools_to_use):
     # create the assistant details 
     instructions_for_assistant = 'use the tools to accomplish the task'
     files_for_assistant = [] # local file paths 
-    
+
     assistant_details = {
         'build_params' : {
             'model': "gpt-4-1106-preview", 
@@ -30,17 +30,17 @@ def create_tool_user(tools_to_use):
         'file_paths': files_for_assistant,
         'functions': {}, # added later
     }
-    
+
     # get the tools from the tools/ directory
     # json and py files by the tool name 
     os.makedirs('tools', exist_ok=True)
     for tool in tools_to_use:
-        with open('tools/' + tool + '.json') as f:
+        with open(f'tools/{tool}.json') as f:
             tool_details = json.load(f)
-    
-        with open('tools/' + tool + '.py') as f:
+
+        with open(f'tools/{tool}.py') as f:
             tool_code = f.read()
-    
+
         # add the tool to the assistant details
         assistant_details['build_params']['tools'].append({
             "type": "function", 
@@ -50,7 +50,7 @@ def create_tool_user(tools_to_use):
                 "parameters": eval(tool_details['parameters']),
             },
         })
-    
+
         # note: tool_code is a string of the code for the tool, should be evaluated to bring into the execution environment before use by the assistant
         assistant_details['functions'].update({
             tool_details['name']: tool_code,
@@ -85,7 +85,7 @@ def talk_to_tool_user():
             tool_user = client.beta.assistants.retrieve(assistant_details['assistant_id'])
             print(f"Loaded assistant details from tool_user.json\n\n" + 90*"-" + "\n\n", flush=True)
 
-        tools_to_use = [func for func in assistant_details['assistant_details']['functions']]
+        tools_to_use = list(assistant_details['assistant_details']['functions'])
     except:
         # create the assistant first 
 
@@ -98,10 +98,10 @@ def talk_to_tool_user():
     functions = {}
     for func in tools_to_use:
         print(f"Loading function {func} into execution environment", flush=True)
-        with open('tools/' + func + '.py') as f:
+        with open(f'tools/{func}.py') as f:
             exec(f.read(), globals())
 
-        functions.update({func: eval(func)})
+        functions[func] = eval(func)
 
     # Create thread
     thread = client.beta.threads.create()
